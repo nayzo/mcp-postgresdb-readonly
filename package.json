@@ -1,0 +1,34 @@
+{
+  "name": "mcp-postgresdb-readonly",
+  "version": "2.0.0",
+  "description": "MCP server for read-only PostgreSQL access (stg, tst, prod)",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "mcp-postgresdb-readonly": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "start": "node dist/index.js",
+    "dev": "tsc && node dist/index.js"
+  },
+  "keywords": [
+    "mcp",
+    "postgresql",
+    "database",
+    "model-context-protocol",
+    "read-only"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "dotenv": "^16.4.7",
+    "pg": "^8.13.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/pg": "^8.11.10",
+    "typescript": "^5.7.2"
+  }
+}
