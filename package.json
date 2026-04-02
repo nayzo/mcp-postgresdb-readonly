@@ -11,6 +11,7 @@
     "build": "tsc",
     "watch": "tsc --watch",
     "start": "node dist/index.js",
+    "start:http": "PORT=3000 node dist/index.js",
     "dev": "tsc && node dist/index.js"
   },
   "keywords": [
@@ -24,9 +25,11 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.4",
     "dotenv": "^16.4.7",
+    "express": "^4.21.2",
     "pg": "^8.13.1"
   },
   "devDependencies": {
+    "@types/express": "^4.17.21",
     "@types/node": "^22.10.2",
     "@types/pg": "^8.11.10",
     "typescript": "^5.7.2"
