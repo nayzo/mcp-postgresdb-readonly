@@ -27,8 +27,8 @@ interface EnvConfig {
 
 // ── Environment config ────────────────────────────────────────────────────────
 const ENV_KEYS: Array<{ key: string; name: string }> = [
-  { key: "STG", name: "stg" },
-  { key: "TST", name: "tst" },
+  { key: "STAGING", name: "staging" },
+  { key: "TEST", name: "test" },
   { key: "PROD", name: "prod" },
 ];
 
@@ -304,9 +304,9 @@ const TOOLS = buildTools();
 const USE_COLORS = process.stderr.isTTY === true;
 
 const ENV_COLORS: Record<string, string> = {
-  prod: "\x1b[31m",
-  stg:  "\x1b[33m",
-  tst:  "\x1b[36m",
+  prod:    "\x1b[31m",
+  staging: "\x1b[33m",
+  test:    "\x1b[36m",
 };
 const RESET = "\x1b[0m";
 
