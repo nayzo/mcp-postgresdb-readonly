@@ -8,7 +8,7 @@ Deux modes de fonctionnement :
 - **stdio** : utilisé localement, l'agent IA lance le process directement.
 - **HTTP** : hébergé sur un serveur, les agents s'y connectent via une URL.
 
-Supporte jusqu'à trois environnements : **stg**, **tst**, **prod**. Seuls ceux avec un `HOST` configuré sont chargés.
+Supporte jusqu'à trois environnements : **staging**, **test**, **prod**. Seuls ceux avec un `HOST` configuré sont chargés.
 
 ---
 
@@ -109,7 +109,7 @@ Agents locaux (Claude, Cursor, OpenCode)
     nginx (SSL termination)
         │  HTTP loopback
         ▼
-  Docker container  ←─── accès DB (prod/stg/tst)
+  Docker container  ←─── accès DB (prod/staging/test)
   (node dist/index.js, PORT=3000)
 ```
 
@@ -166,7 +166,7 @@ POSTGRES_PROD_PORT=5432
 POSTGRES_PROD_DATABASE=mydb
 POSTGRES_PROD_USER=reader
 POSTGRES_PROD_PASSWORD=secret
-# POSTGRES_PROD_SCHEMA=users  # optional: restrict to a single schema; omit to access all schemas
+# POSTGRES_PROD_SCHEMA=myschema  # optional: restrict to a single schema; omit to access all schemas
 POSTGRES_PROD_SSL=true
 
 # Protections (optionnel, valeurs par défaut)
@@ -380,7 +380,7 @@ make health
 
 ### Connexions base de données
 
-Chaque environnement utilise le préfixe `POSTGRES_{ENV}_` où `{ENV}` vaut `STG`, `TST` ou `PROD`.
+Chaque environnement utilise le préfixe `POSTGRES_{ENV}_` où `{ENV}` vaut `STAGING`, `TEST` ou `PROD`.
 Si `POSTGRES_{ENV}_HOST` est absent, l'environnement est ignoré.
 
 | Variable | Obligatoire | Défaut | Description |
@@ -433,15 +433,15 @@ Exemples :
 
 ```
 [11:52:26] PROD  query          | duration=257ms | rows=3    | sql=SELECT id, mail FROM users.user LIMIT 3
-[11:52:26] STG   list-tables    | schema=all     | duration=300ms | tables=212
-[11:52:26] STG   list-tables    | schema=users   | duration=300ms | tables=94
-[11:52:26] TST   describe-table | schema=all     | table=subscription | duration=247ms | columns=32
-[11:52:26] PROD  query          | duration=12ms  | rows=1000 | limit=auto:1000 | sql=SELECT * FROM users.user
-[11:52:26] STG   query          | status=BLOCKED (write) | sql=INSERT INTO ...
+[11:52:26] STAGING  list-tables    | schema=all     | duration=300ms | tables=212
+[11:52:26] STAGING  list-tables    | schema=public  | duration=300ms | tables=94
+[11:52:26] TEST     describe-table | schema=all     | table=orders   | duration=247ms | columns=32
+[11:52:26] PROD     query          | duration=12ms  | rows=1000 | limit=auto:1000 | sql=SELECT * FROM public.orders
+[11:52:26] STAGING  query          | status=BLOCKED (write) | sql=INSERT INTO ...
 [11:52:26] PROD  query          | status=RATE LIMITED | limit=60/min
 ```
 
-`PROD` s'affiche en rouge, `STG` en jaune, `TST` en cyan (si `stderr` est un TTY).
+`PROD` s'affiche en rouge, `STAGING` en jaune, `TEST` en cyan (si `stderr` est un TTY).
 
 ---
 
