@@ -1,0 +1,27 @@
+services:
+  mcp-postgresdb:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    image: mcp-postgresdb-readonly:latest
+    container_name: mcp-postgresdb-readonly
+    restart: unless-stopped
+    env_file: .env
+    # PORT must always be set in HTTP mode, override even if .env has a different value
+    environment:
+      PORT: "3000"
+      NODE_ENV: "production"
+    ports:
+      - "127.0.0.1:3000:3000"   # bind to loopback only, expose via nginx
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
