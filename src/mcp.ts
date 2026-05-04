@@ -21,7 +21,7 @@ interface EnvConfig {
   database: string;
   user: string;
   password: string;
-  schema: string;
+  schema: string | null;
   ssl: boolean;
 }
 
@@ -66,7 +66,7 @@ function loadConfig(): Record<string, EnvConfig> {
       database,
       user,
       password,
-      schema: process.env[`POSTGRES_${key}_SCHEMA`] ?? "public",
+      schema: process.env[`POSTGRES_${key}_SCHEMA`] || null,
       ssl,
     };
   }
@@ -368,7 +368,7 @@ export function createMcpServer(): Server {
             name: envName,
             host: ENV_CONFIGS[envName].host,
             database: ENV_CONFIGS[envName].database,
-            schema: ENV_CONFIGS[envName].schema,
+            defaultSchema: ENV_CONFIGS[envName].schema ?? "all",
             ssl: ENV_CONFIGS[envName].ssl,
             readOnly: true,
           }));
@@ -454,19 +454,38 @@ export function createMcpServer(): Server {
           const schema = rawSchema ?? ENV_CONFIGS[env].schema;
 
           const pool = getPool(env);
-          const result = await pool.query(
-            `SELECT
-              table_name,
-              (SELECT COUNT(*)
-               FROM information_schema.columns
-               WHERE table_schema = $1 AND table_name = t.table_name
-              ) AS column_count
-            FROM information_schema.tables t
-            WHERE table_schema = $1
-            ORDER BY table_name`,
-            [schema]
-          );
-          log({ tool: "list-tables", env, schema, duration: `${Date.now() - t}ms`, tables: result.rowCount ?? 0 });
+          let result;
+          if (schema) {
+            result = await pool.query(
+              `SELECT
+                table_name,
+                (SELECT COUNT(*)
+                 FROM information_schema.columns
+                 WHERE table_schema = $1 AND table_name = t.table_name
+                ) AS column_count
+              FROM information_schema.tables t
+              WHERE table_schema = $1
+                AND table_type = 'BASE TABLE'
+              ORDER BY table_name`,
+              [schema]
+            );
+          } else {
+            result = await pool.query(
+              `SELECT
+                table_schema,
+                table_name,
+                (SELECT COUNT(*)
+                 FROM information_schema.columns c
+                 WHERE c.table_schema = t.table_schema AND c.table_name = t.table_name
+                ) AS column_count
+              FROM information_schema.tables t
+              WHERE table_schema NOT IN ('pg_catalog', 'information_schema', 'pg_toast')
+                AND table_schema NOT LIKE 'pg_temp_%'
+                AND table_type = 'BASE TABLE'
+              ORDER BY table_schema, table_name`
+            );
+          }
+          log({ tool: "list-tables", env, schema: schema ?? "all", duration: `${Date.now() - t}ms`, tables: result.rowCount ?? 0 });
 
           return {
             content: [{ type: "text", text: JSON.stringify(result.rows, null, 2) }],
@@ -479,21 +498,42 @@ export function createMcpServer(): Server {
           const schema = rawSchema ?? ENV_CONFIGS[env].schema;
 
           const pool = getPool(env);
-          const result = await pool.query(
-            `SELECT
-              column_name,
-              data_type,
-              character_maximum_length,
-              numeric_precision,
-              numeric_scale,
-              is_nullable,
-              column_default
-            FROM information_schema.columns
-            WHERE table_schema = $1 AND table_name = $2
-            ORDER BY ordinal_position`,
-            [schema, table]
-          );
-          log({ tool: "describe-table", env, schema, table, duration: `${Date.now() - t}ms`, columns: result.rowCount ?? 0 });
+          let result;
+          if (schema) {
+            result = await pool.query(
+              `SELECT
+                column_name,
+                data_type,
+                character_maximum_length,
+                numeric_precision,
+                numeric_scale,
+                is_nullable,
+                column_default
+              FROM information_schema.columns
+              WHERE table_schema = $1 AND table_name = $2
+              ORDER BY ordinal_position`,
+              [schema, table]
+            );
+          } else {
+            result = await pool.query(
+              `SELECT
+                table_schema,
+                column_name,
+                data_type,
+                character_maximum_length,
+                numeric_precision,
+                numeric_scale,
+                is_nullable,
+                column_default
+              FROM information_schema.columns
+              WHERE table_name = $1
+                AND table_schema NOT IN ('pg_catalog', 'information_schema', 'pg_toast')
+                AND table_schema NOT LIKE 'pg_temp_%'
+              ORDER BY table_schema, ordinal_position`,
+              [table]
+            );
+          }
+          log({ tool: "describe-table", env, schema: schema ?? "all", table, duration: `${Date.now() - t}ms`, columns: result.rowCount ?? 0 });
 
           return {
             content: [{ type: "text", text: JSON.stringify(result.rows, null, 2) }],

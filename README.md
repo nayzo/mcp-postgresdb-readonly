@@ -17,8 +17,8 @@ Supporte jusqu'à trois environnements : **stg**, **tst**, **prod**. Seuls ceux 
 | Outil | Description |
 |---|---|
 | `query` | Exécute une requête SELECT (écritures rejetées) |
-| `list-tables` | Liste les tables d'un schéma |
-| `describe-table` | Affiche colonnes, types, nullabilité, valeurs par défaut |
+| `list-tables` | Liste les tables d'un schéma (ou de tous les schémas si aucun schéma par défaut n'est configuré) |
+| `describe-table` | Affiche colonnes, types, nullabilité, valeurs par défaut (tous les schémas si aucun par défaut) |
 | `list-schemas` | Liste tous les schémas définis par l'utilisateur |
 | `list-environments` | Liste les environnements configurés (sans credentials) |
 
@@ -166,7 +166,7 @@ POSTGRES_PROD_PORT=5432
 POSTGRES_PROD_DATABASE=mydb
 POSTGRES_PROD_USER=reader
 POSTGRES_PROD_PASSWORD=secret
-POSTGRES_PROD_SCHEMA=public
+# POSTGRES_PROD_SCHEMA=users  # optional: restrict to a single schema; omit to access all schemas
 POSTGRES_PROD_SSL=true
 
 # Protections (optionnel, valeurs par défaut)
@@ -390,7 +390,7 @@ Si `POSTGRES_{ENV}_HOST` est absent, l'environnement est ignoré.
 | `POSTGRES_{ENV}_DATABASE` | oui | - | Nom de la base |
 | `POSTGRES_{ENV}_USER` | oui | - | Utilisateur |
 | `POSTGRES_{ENV}_PASSWORD` | oui | - | Mot de passe |
-| `POSTGRES_{ENV}_SCHEMA` | non | `public` | Schéma par défaut |
+| `POSTGRES_{ENV}_SCHEMA` | non | aucun (tous les schémas) | Restreint `list-tables` et `describe-table` à un schéma précis. Si absent, tous les schémas utilisateur sont accessibles. |
 | `POSTGRES_{ENV}_SSL` | non | `true` | `false` pour désactiver SSL (local/dev uniquement) |
 
 ### Serveur HTTP
@@ -433,8 +433,9 @@ Exemples :
 
 ```
 [11:52:26] PROD  query          | duration=257ms | rows=3    | sql=SELECT id, mail FROM users.user LIMIT 3
+[11:52:26] STG   list-tables    | schema=all     | duration=300ms | tables=212
 [11:52:26] STG   list-tables    | schema=users   | duration=300ms | tables=94
-[11:52:26] TST   describe-table | schema=users   | table=subscription | duration=247ms | columns=32
+[11:52:26] TST   describe-table | schema=all     | table=subscription | duration=247ms | columns=32
 [11:52:26] PROD  query          | duration=12ms  | rows=1000 | limit=auto:1000 | sql=SELECT * FROM users.user
 [11:52:26] STG   query          | status=BLOCKED (write) | sql=INSERT INTO ...
 [11:52:26] PROD  query          | status=RATE LIMITED | limit=60/min
